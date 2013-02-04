@@ -1,0 +1,237 @@
+NAME
+    MongoDB::QueryBuilder - Query Builder for MongoDB
+
+VERSION
+    version 0.0001
+
+SYNOPSIS
+        # this plugin is brand-spanking new!!!
+
+        use MongoDB;
+        use MongoDB::QueryBuilder;
+
+        my $client     = MongoDB::MongoClient->new(host => 'localhost:27017');
+        my $database   = $client->get_database( 'musicbox' );
+        my $collection = $database->get_collection( 'cds' );
+
+        my $query = MongoDB::QueryBuilder->new(
+            collection => $collection,
+            and_where  => ['cd.title'            => $some_title],
+            and_where  => ['cd.released$gt$date' => $some_isodate],
+            any_in     => ['cd.artist'           => $some_artist],
+            page       => [25, 0],
+        );
+
+        # the query explained in sql-speak:
+        # .. select * from cds cd where cd.title = ? and
+        # .. cd.released > ? and cd.artist IN (?) limit 25 offset 0
+
+        my $cursor = $query->cursor;
+
+        while (my $album = $cursor->next) {
+            printf "%s\n", $album->{name};
+        }
+
+DESCRIPTION
+    MongoDB::QueryBuilder provides an interface to query MongoDB using
+    chainable objects for building complex and dynamic queries. This module
+    will only hit the database when you ask it to return a MongoDB::Cursor
+    object.
+
+METHODS
+  new
+    The new method is the object constructor, it accepts a single hashref or
+    list containing action/value pairs where an action is a
+    MongoDB::QueryBuilder class method and a value is a scalar or arrayref.
+    All methods that do not interact with the database can be passed as an
+    argument.
+
+        my $query = MongoDB::QueryBuilder->new(
+            where => ['record_label' => 'Time-Warner'],
+            limit => 25
+        );
+
+  all_in
+    The all_in method adds a criterion which returns documents where the
+    field specified holds an array which contains all of the values
+    specified. The corresponding MongoDB operation is $all.
+
+        $query->all_in(tags => ['hip-hop', 'rap']);
+
+        # e.g. { "tags" : { "$all" : ['hip-hop', 'rap'] } }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/all/> for
+    more information.
+
+  and_where
+    The and_where method adds a criterion which returns documents where the
+    clauses specified must all match in order to return results. The
+    corresponding MongoDB operation is $and.
+
+        $query->and_where('quantity$lt' => 50, status => 'available');
+
+        # e.g. { "$and" : [ { "quantity" : { "$lt" : 50 } }, { "status" : "available" } ] }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/and/> for
+    more information.
+
+  any_in
+    The any_in method adds a criterion which returns documents where the
+    field specified must holds one of the values specified in order to
+    return results. The corresponding MongoDB operation is $in.
+
+        $query->all_in(tags => ['hip-hop', 'rap']);
+
+        # e.g. { "tags" : { "$in" : ['hip-hop', 'rap'] } }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/in/> for
+    more information.
+
+  asc_sort
+    The asc_sort method adds a criterion that instructs the MongoDB::Cursor
+    object to sort the results on specified key(s) in ascending order.
+
+        $query->asc_sort('artist.first_name', 'artist.last_name');
+
+  collection
+    The collection method provides an accessor for the MongoDB::Collection
+    object used to query the database.
+
+        my $collection = $query->collection($new_collection);
+
+  criteria
+    The criteria method provides an accessor for the
+    query-specification-object used to query the database.
+
+        my $criteria = $query->criteria;
+
+  cursor
+    The cursor method analyzes the current query criteria, generates a
+    MongoDB::Cursor object and queries the databases.
+
+        my $cursor = $query->cursor;
+
+  desc_sort
+    The desc_sort method adds a criterion that instructs the MongoDB::Cursor
+    object to sort the results on specified key(s) in ascending order.
+
+        $query->desc_sort('artist.first_name', 'artist.last_name');
+
+  limit
+    The limit method adds a criterion that instructs the MongoDB::Cursor
+    object to limit the results by the number specified.
+
+        $query->limit(25);
+
+  near
+    The near method adds a criterion to find locations that are near the
+    supplied coordinates. This performs a MongoDB $near selection and
+    requires a 2d index on the field specified. The corresponding MongoDB
+    operation is $near.
+
+        $query->near('store.location.latlng' => [52.30, 13.25]);
+
+        # e.g. { "store.location.latlng" : { "$near" : [52.30, 13.25] } }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/near/> for
+    more information.
+
+  never
+    The never method adds a criterion that instructs the MongoDB::Cursor
+    object to select all columns except the ones specified. The opposite of
+    this is the only() method, these two methods can't be used together.
+
+        $query->never('password', 'apikey');
+
+  not_in
+    The not_in method adds a criterion which returns documents where the
+    field specified must not hold any of the values specified in order to
+    return results. The corresponding MongoDB operation is $nin.
+
+        $query->not_in('artist.last_name' => ['Jackson', 'Nelson']);
+
+        # e.g. { "artist.last_name" : { "$nin" : ['Jackson', 'Nelson'] } }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/nin/> for
+    more information.
+
+  offset
+    The offset method adds a criterion that instructs the MongoDB::Cursor
+    object to offset the results by the number specified.
+
+        $query->limit(25);
+
+  only
+    The only method adds a criterion that instructs the MongoDB::Cursor
+    object to select only the columns specified. The opposite of this is the
+    never() method, these two methods can't be used together.
+
+        $query->only('artist.first_name', 'artist.last_name');
+
+  or_where
+    The or_where method adds a criterion which returns documents where
+    at-least one of the clauses specified must match in order to return
+    results. The corresponding MongoDB operation is $or.
+
+        $query->or_where('quantity$lte' => 30, 'quantity$gte' => 10);
+
+        # e.g. { "$or" : [ { "quantity" : { "$lte" : 30 } }, { "quantity" : { "$gte" : 10 } } ] }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/or/> for
+    more information.
+
+  page
+    The page method is a purely a convenience method which adds a limit and
+    offset criterion to the query. The page parameter is optional and
+    defaults to 0, it should be a number that when multiplied by the limit
+    will represents how many documents should be offset.
+
+        $query->page($limit, $page); # page is optional and defaults to 0
+
+  sort
+    The sort method adds a criterion that instructs the MongoDB::Cursor
+    object to sort the results on specified key(s) in the specified order.
+
+        $query->sort('artist.first_name' => -1, 'artist.last_name' => 1);
+
+  where
+    The where method adds a criterion which returns documents where all or
+    the clauses specified must be truthful in order to return results.
+
+        $query->where('agent.office.location$within$center' => [[0,0],10]);
+
+        # e.g. { "agent.office.location" : { "$within" : { "$center" : [[0,0],10] } } }
+
+  where_exists
+    The where_exists method adds a criterion which returns documents where
+    the fields specified must all exist in order to return results. The
+    corresponding MongoDB operation is $exists.
+
+        $query->where_exists('artist.email_address', 'artist.phone_number');
+
+        # e.g. { "artist.email_address" : { "$exists" : true }, "artist.phone_number" : { "$exists" : true } }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/exists/>
+    for more information.
+
+  where_not_exists
+    The where_not_exists method adds a criterion which returns documents
+    where the fields specified must NOT exist in order to return results.
+    The corresponding MongoDB operation is $exists.
+
+        $query->where_not_exists('artist.terminated');
+
+        # e.g. { "artist.terminated" : { "$exists" : false } }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/exists/>
+    for more information.
+
+AUTHOR
+    Al Newkirk <anewkirk@ana.io>
+
+COPYRIGHT AND LICENSE
+    This software is copyright (c) 2011 by Al Newkirk.
+
+    This is free software; you can redistribute it and/or modify it under
+    the same terms as the Perl 5 programming language system itself.
+

@@ -1,0 +1,24 @@
+---
+abstract: 'Query Builder for MongoDB'
+author:
+  - 'Al Newkirk <anewkirk@ana.io>'
+build_requires: {}
+configure_requires:
+  ExtUtils::MakeMaker: 6.30
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 4.300028, CPAN::Meta::Converter version 2.120921'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: MongoDB-QueryBuilder
+requires:
+  Hash::Flatten: 0
+  Hash::Merge: 0
+  MongoDB: 0
+  boolean: 0
+resources:
+  bugtracker: https://github.com/alnewkirk/MongoDB-QueryBuilder/issues
+  homepage: https://github.com/alnewkirk/MongoDB-QueryBuilder
+  repository: git://github.com/alnewkirk/MongoDB-QueryBuilder.git
+version: 0.0001
