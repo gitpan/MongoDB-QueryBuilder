@@ -2,34 +2,34 @@ NAME
     MongoDB::QueryBuilder - Query Builder for MongoDB
 
 VERSION
-    version 0.0001
+    version 0.0002
 
 SYNOPSIS
-        # this plugin is brand-spanking new!!!
-
         use MongoDB;
         use MongoDB::QueryBuilder;
 
-        my $client     = MongoDB::MongoClient->new(host => 'localhost:27017');
-        my $database   = $client->get_database( 'musicbox' );
-        my $collection = $database->get_collection( 'cds' );
+        # build query conditions
 
         my $query = MongoDB::QueryBuilder->new(
-            collection => $collection,
             and_where  => ['cd.title'            => $some_title],
             and_where  => ['cd.released$gt$date' => $some_isodate],
             any_in     => ['cd.artist'           => $some_artist],
             page       => [25, 0],
         );
 
-        # the query explained in sql-speak:
+        # .. in sql
         # .. select * from cds cd where cd.title = ? and
         # .. cd.released > ? and cd.artist IN (?) limit 25 offset 0
 
-        my $cursor = $query->cursor;
+        # connect and query
+
+        my $client     = MongoDB::MongoClient->new(host => 'localhost:27017');
+        my $database   = $client->get_database('musicbox');
+        my $collection = $query->collection($database->get_collection('cds'));
+        my $cursor     = $query->cursor;
 
         while (my $album = $cursor->next) {
-            printf "%s\n", $album->{name};
+            say $album->{name};
         }
 
 DESCRIPTION
@@ -80,7 +80,7 @@ METHODS
     field specified must holds one of the values specified in order to
     return results. The corresponding MongoDB operation is $in.
 
-        $query->all_in(tags => ['hip-hop', 'rap']);
+        $query->any_in(tags => ['hip-hop', 'rap']);
 
         # e.g. { "tags" : { "$in" : ['hip-hop', 'rap'] } }
 
@@ -104,6 +104,12 @@ METHODS
     query-specification-object used to query the database.
 
         my $criteria = $query->criteria;
+
+  criteria_where
+    The criteria_where method is a convenience method which provides access
+    to the query-specification where-clause.
+
+        my $criteria = $query->criteria_where
 
   cursor
     The cursor method analyzes the current query criteria, generates a

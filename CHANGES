@@ -1,5 +1,11 @@
 Revision history for the Perl library MongoDB::QueryBuilder
 
+0.0002  2013-02-04
+
+  - Better approach to exploding nested query operators (slightly slower)
+  - Added convenience method criteria_where
+  - Fixed POD typos
+
 0.0001  2013-02-03
 
   - I went to CPAN

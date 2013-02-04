@@ -6,12 +6,12 @@ use strict;
 use warnings;
 
 use boolean;
-use Hash::Flatten 'unflatten';
+use Hash::Flatten 'flatten', 'unflatten';
 use Hash::Merge   'merge';
 
 Hash::Merge::set_behavior('RIGHT_PRECEDENT');
 
-our $VERSION = '0.0001'; # VERSION
+our $VERSION = '0.0002'; # VERSION
 
 
 
@@ -82,6 +82,19 @@ sub _set_where_clause {
     my $self     = shift;
     my $criteria = shift;
 
+    # collapse and explode query operators
+
+    $criteria = flatten $criteria;
+
+    for my $key (keys %{$criteria}) {
+        if ($key =~ /\$/) {
+            my $nkey = $key; $nkey =~ s/(\w)\$/$1.\$/g;
+            $criteria->{$nkey} = delete $criteria->{$key};
+        }
+    }
+
+    # expand and merge conditions
+
     $self->criteria->{where} =
         merge $self->criteria->{where}, unflatten $criteria
     ;
@@ -96,9 +109,7 @@ sub all_in {
     my $self = shift;
     my $args = $self->_get_args_array(@_);
 
-    $args->[0] =~ s/\./\\\./g;
-
-    my $criteria = {$args->[0].'.$all' => $args->[1]};
+    my $criteria = {$args->[0] => { '$all' => $args->[1] }};
 
     $self->_set_where_clause($criteria);
 
@@ -113,17 +124,15 @@ sub and_where {
     my $args = $self->_get_args_array(@_);
 
     my $criteria = {};
+    my $and = [];
     my $i = 0;
 
     while (my($key, $val) = splice @{$args}, 0, 2) {
-
-        $key =~ s/\./\\\./g;
-        $key =~ s/\$/.\$/g;
-
-        $criteria->{"\$and:$i\.$key"} = $val;
+        $and->[$i]->{$key} = $val;
         $i++;
-
     }
+
+    $criteria->{'$and'} = $and;
 
     $self->_set_where_clause($criteria);
 
@@ -137,9 +146,7 @@ sub any_in {
     my $self = shift;
     my $args = $self->_get_args_array(@_);
 
-    $args->[0] =~ s/\./\\\./g;
-
-    my $criteria = {$args->[0].'.$in' => $args->[1]};
+    my $criteria = {$args->[0] => {'$in' => $args->[1]}};
 
     $self->_set_where_clause($criteria);
 
@@ -154,9 +161,7 @@ sub asc_sort {
     my $args = $self->_get_args_array(@_);
 
     foreach my $key (@{$args}) {
-
         $self->criteria->{order}->{$key} = 1;
-
     }
 
     return $self;
@@ -197,6 +202,15 @@ sub criteria {
 }
 
 
+sub criteria_where {
+
+    my ($self) = @_;
+
+    return $self->{criteria}->{where};
+
+}
+
+
 sub cursor {
 
     my $self = shift;
@@ -208,7 +222,7 @@ sub cursor {
     $cur->fields($cri->{select})          if values %{$cri->{select}};
     $cur->sort($cri->{order})             if values %{$cri->{order}};
     $cur->limit($cri->{options}->{limit}) if $cri->{options}->{limit};
-    $cur->skip($cri->{options}->{offset})   if $cri->{options}->{offset};
+    $cur->skip($cri->{options}->{offset}) if $cri->{options}->{offset};
 
     return $cur;
 }
@@ -220,9 +234,7 @@ sub desc_sort {
     my $args = $self->_get_args_array(@_);
 
     foreach my $key (@{$args}) {
-
         $self->criteria->{order}->{$key} = -1;
-
     }
 
     return $self;
@@ -247,10 +259,8 @@ sub near {
     my $self = shift;
     my $args = $self->_get_args_array(@_);
 
-    $args->[0] =~ s/\./\\\./g;
-
-    my $criteria_nil = {$args->[0].'.$near' => []};
-    my $criteria_set = {$args->[0].'.$near' => $args->[1]};
+    my $criteria_nil = {$args->[0] => {'$near' => []}};
+    my $criteria_set = {$args->[0] => {'$near' => $args->[1]}};
 
     $self->_set_where_clause($criteria_nil);
     $self->_set_where_clause($criteria_set);
@@ -266,9 +276,7 @@ sub never {
     my $args = $self->_get_args_array(@_);
 
     foreach my $key (@{$args}) {
-
         $self->criteria->{select}->{$key} = 0;
-
     }
 
     return $self;
@@ -281,9 +289,7 @@ sub not_in {
     my $self = shift;
     my $args = $self->_get_args_array(@_);
 
-    $args->[0] =~ s/\./\\\./g;
-
-    my $criteria = {$args->[0].'.$nin' => $args->[1]};
+    my $criteria = {$args->[0] => {'$nin' => $args->[1]}};
 
     $self->_set_where_clause($criteria);
 
@@ -310,9 +316,7 @@ sub only {
     my $args = $self->_get_args_array(@_);
 
     foreach my $key (@{$args}) {
-
         $self->criteria->{select}->{$key} = 1;
-
     }
 
     return $self;
@@ -326,17 +330,15 @@ sub or_where {
     my $args = $self->_get_args_array(@_);
 
     my $criteria = {};
+    my $or = [];
     my $i = 0;
 
     while (my($key, $val) = splice @{$args}, 0, 2) {
-
-        $key =~ s/\./\\\./g;
-        $key =~ s/\$/.\$/g;
-
-        $criteria->{"\$or:$i\.$key"} = $val;
+        $or->[$i]->{$key} = $val;
         $i++;
-
     }
+
+    $criteria->{'$or'} = $or;
 
     $self->_set_where_clause($criteria);
 
@@ -368,9 +370,7 @@ sub sort {
     my $args = $self->_get_args_array(@_);
 
     while (my($key, $val) = splice @{$args}, 0, 2) {
-
         $self->criteria->{order}->{$key} = $val;
-
     }
 
     return $self;
@@ -386,12 +386,7 @@ sub where {
     my $criteria = {};
 
     while (my($key, $val) = splice @{$args}, 0, 2) {
-
-        $key =~ s/\./\\\./g;
-        $key =~ s/\$/.\$/g;
-
         $criteria->{$key} = $val;
-
     }
 
     $self->_set_where_clause($criteria);
@@ -409,12 +404,7 @@ sub where_exists {
     my $criteria = {};
 
     foreach my $key (@{$args}) {
-
-        $key =~ s/\./\\\./g;
-        $key =~ s/\$/.\$/g;
-
-        $criteria->{$key.'.$exists'} = boolean::true;
-
+        $criteria->{$key}->{'$exists'} = boolean::true;
     }
 
     $self->_set_where_clause($criteria);
@@ -433,12 +423,7 @@ sub where_not_exists {
     my $criteria = {};
 
     foreach my $key (@{$args}) {
-
-        $key =~ s/\./\\\./g;
-        $key =~ s/\$/.\$/g;
-
-        $criteria->{$key.'.$exists'} = boolean::false;
-
+        $criteria->{$key}->{'$exists'} = boolean::false;
     }
 
     $self->_set_where_clause($criteria);
@@ -458,35 +443,35 @@ MongoDB::QueryBuilder - Query Builder for MongoDB
 
 =head1 VERSION
 
-version 0.0001
+version 0.0002
 
 =head1 SYNOPSIS
-
-    # this plugin is brand-spanking new!!!
 
     use MongoDB;
     use MongoDB::QueryBuilder;
 
-    my $client     = MongoDB::MongoClient->new(host => 'localhost:27017');
-    my $database   = $client->get_database( 'musicbox' );
-    my $collection = $database->get_collection( 'cds' );
+    # build query conditions
 
     my $query = MongoDB::QueryBuilder->new(
-        collection => $collection,
         and_where  => ['cd.title'            => $some_title],
         and_where  => ['cd.released$gt$date' => $some_isodate],
         any_in     => ['cd.artist'           => $some_artist],
         page       => [25, 0],
     );
 
-    # the query explained in sql-speak:
+    # .. in sql
     # .. select * from cds cd where cd.title = ? and
     # .. cd.released > ? and cd.artist IN (?) limit 25 offset 0
 
-    my $cursor = $query->cursor;
+    # connect and query
+
+    my $client     = MongoDB::MongoClient->new(host => 'localhost:27017');
+    my $database   = $client->get_database('musicbox');
+    my $collection = $query->collection($database->get_collection('cds'));
+    my $cursor     = $query->cursor;
 
     while (my $album = $cursor->next) {
-        printf "%s\n", $album->{name};
+        say $album->{name};
     }
 
 =head1 DESCRIPTION
@@ -541,7 +526,7 @@ The any_in method adds a criterion which returns documents where the field
 specified must holds one of the values specified in order to return results.
 The corresponding MongoDB operation is $in.
 
-    $query->all_in(tags => ['hip-hop', 'rap']);
+    $query->any_in(tags => ['hip-hop', 'rap']);
 
     # e.g. { "tags" : { "$in" : ['hip-hop', 'rap'] } }
 
@@ -568,6 +553,13 @@ The criteria method provides an accessor for the query-specification-object used
 to query the database.
 
     my $criteria = $query->criteria;
+
+=head2 criteria_where
+
+The criteria_where method is a convenience method which provides access to the
+query-specification where-clause.
+
+    my $criteria = $query->criteria_where
 
 =head2 cursor
 
