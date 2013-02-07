@@ -11,7 +11,7 @@ use Hash::Merge   'merge';
 
 Hash::Merge::set_behavior('RIGHT_PRECEDENT');
 
-our $VERSION = '0.0002'; # VERSION
+our $VERSION = '0.0003'; # VERSION
 
 
 
@@ -284,6 +284,29 @@ sub never {
 }
 
 
+sub nor_where {
+
+    my $self = shift;
+    my $args = $self->_get_args_array(@_);
+
+    my $criteria = {};
+    my $nor = [];
+    my $i = 0;
+
+    while (my($key, $val) = splice @{$args}, 0, 2) {
+        $nor->[$i]->{$key} = $val;
+        $i++;
+    }
+
+    $criteria->{'$nor'} = $nor;
+
+    $self->_set_where_clause($criteria);
+
+    return $self;
+
+}
+
+
 sub not_in {
 
     my $self = shift;
@@ -443,7 +466,7 @@ MongoDB::QueryBuilder - Query Builder for MongoDB
 
 =head1 VERSION
 
-version 0.0002
+version 0.0003
 
 =head1 SYNOPSIS
 
@@ -602,6 +625,19 @@ to select all columns except the ones specified. The opposite of this is the
 only() method, these two methods can't be used together.
 
     $query->never('password', 'apikey');
+
+=head2 nor_where
+
+The nor_where method adds a criterion which returns documents where none of the
+clauses specified should match in order to return results. The corresponding
+MongoDB operation is $nor.
+
+    $query->nor_where('quantity$lte' => 30, 'quantity$gte' => 10);
+
+    # e.g. { "$nor" : [ { "quantity" : { "$lte" : 30 } }, { "quantity" : { "$gte" : 10 } } ] }
+
+Please see L<http://docs.mongodb.org/manual/reference/operator/nor/> for more
+information.
 
 =head2 not_in
 

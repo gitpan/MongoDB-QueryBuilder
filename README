@@ -2,7 +2,7 @@ NAME
     MongoDB::QueryBuilder - Query Builder for MongoDB
 
 VERSION
-    version 0.0002
+    version 0.0003
 
 SYNOPSIS
         use MongoDB;
@@ -148,6 +148,18 @@ METHODS
     this is the only() method, these two methods can't be used together.
 
         $query->never('password', 'apikey');
+
+  nor_where
+    The nor_where method adds a criterion which returns documents where none
+    of the clauses specified should match in order to return results. The
+    corresponding MongoDB operation is $nor.
+
+        $query->nor_where('quantity$lte' => 30, 'quantity$gte' => 10);
+
+        # e.g. { "$nor" : [ { "quantity" : { "$lte" : 30 } }, { "quantity" : { "$gte" : 10 } } ] }
+
+    Please see <http://docs.mongodb.org/manual/reference/operator/nor/> for
+    more information.
 
   not_in
     The not_in method adds a criterion which returns documents where the

@@ -1,5 +1,9 @@
 Revision history for the Perl library MongoDB::QueryBuilder
 
+0.0003  2013-02-04
+
+  - Added method nor_where
+
 0.0002  2013-02-04
 
   - Better approach to exploding nested query operators (slightly slower)

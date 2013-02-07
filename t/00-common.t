@@ -140,6 +140,17 @@ BEGIN {
 }
 
 {
+    # nor_where method
+    my $query = MongoDB::QueryBuilder->new(
+        nor_where => ['quantity$lte' => 30, 'quantity$gte' => 10]
+    );
+    is_deeply $query->criteria->{where}, {
+        '$nor' => [{quantity=>{'$lte' => 30}}, {quantity=>{'$gte' => 10}}]
+    },
+    'MongoDB::QueryBuilder->nor_where(...) - Usage and Criteria OK';
+}
+
+{
     # not_in method
     my $query = MongoDB::QueryBuilder->new(
         not_in => ['artist.last_name' => ['Jackson', 'Nelson']]
