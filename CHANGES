@@ -1,5 +1,9 @@
 Revision history for the Perl library MongoDB::QueryBuilder
 
+0.0004  2013-02-07
+
+  - Fixed tests to check for the existence of MongoDB server
+
 0.0003  2013-02-04
 
   - Added method nor_where

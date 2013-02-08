@@ -11,7 +11,7 @@ use Hash::Merge   'merge';
 
 Hash::Merge::set_behavior('RIGHT_PRECEDENT');
 
-our $VERSION = '0.0003'; # VERSION
+our $VERSION = '0.0004'; # VERSION
 
 
 
@@ -466,7 +466,7 @@ MongoDB::QueryBuilder - Query Builder for MongoDB
 
 =head1 VERSION
 
-version 0.0003
+version 0.0004
 
 =head1 SYNOPSIS
 

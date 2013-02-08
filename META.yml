@@ -21,4 +21,4 @@ resources:
   bugtracker: https://github.com/alnewkirk/MongoDB-QueryBuilder/issues
   homepage: http://search.cpan.org/dist/MongoDB-QueryBuilder/
   repository: git://github.com/alnewkirk/MongoDB-QueryBuilder.git
-version: 0.0003
+version: 0.0004

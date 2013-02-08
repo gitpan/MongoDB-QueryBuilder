@@ -255,22 +255,32 @@ BEGIN {
 }
 
 {
+    my $client;
+
+    eval {
+        my $host = $ENV{MONGOD} || "localhost";
+        $client  = MongoDB::MongoClient->new(host=>$host,ssl=>$ENV{MONGO_SSL});
+    };
+
     # synopsis example method
-    my $client     = MongoDB::MongoClient->new(host => 'localhost:27017');
-    my $database   = $client->get_database('musicbox');
-    my $collection = $database->get_collection('cds');
+    unless ($@) {
 
-    my $query = MongoDB::QueryBuilder->new(
-        collection => $collection,
-        and_where  => ['cd.title'            => 'Pokey Shuffle'],
-        and_where  => ['cd.released$gt$date' => time()],
-        any_in     => ['cd.artist'           => 'Gummy Bear'],
-        page       => [25, 0],
-    );
+        my $database   = $client->get_database('musicbox');
+        my $collection = $database->get_collection('cds');
 
-    my $cursor = $query->cursor;
+        my $query = MongoDB::QueryBuilder->new(
+            collection => $collection,
+            and_where  => ['cd.title'            => 'Pokey Shuffle'],
+            and_where  => ['cd.released$gt$date' => time()],
+            any_in     => ['cd.artist'           => 'Gummy Bear'],
+            page       => [25, 0],
+        );
 
-    isa_ok $cursor, 'MongoDB::Cursor';
+        my $cursor = $query->cursor;
+
+        isa_ok $cursor, 'MongoDB::Cursor';
+
+    }
 }
 
 done_testing;

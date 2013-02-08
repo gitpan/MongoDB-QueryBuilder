@@ -2,7 +2,7 @@ NAME
     MongoDB::QueryBuilder - Query Builder for MongoDB
 
 VERSION
-    version 0.0003
+    version 0.0004
 
 SYNOPSIS
         use MongoDB;
