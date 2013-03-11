@@ -4,7 +4,7 @@ MongoDB::QueryBuilder - Query Builder for MongoDB
 
 # VERSION
 
-version 0.0004
+version 0.0005
 
 # SYNOPSIS
 

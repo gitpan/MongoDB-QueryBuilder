@@ -11,7 +11,7 @@ use Hash::Merge   'merge';
 
 Hash::Merge::set_behavior('RIGHT_PRECEDENT');
 
-our $VERSION = '0.0004'; # VERSION
+our $VERSION = '0.0005'; # VERSION
 
 
 
@@ -178,12 +178,16 @@ sub collection {
     my $collection = $args->[0];
 
     my $die_msg = sprintf
-        'The collection() method for %s requires a MongoDB::Collection object',
+        'The collection() method for %s requires a ' .
+        'MongoDB compatible collection object',
         ref $self
     ;
 
-    die $die_msg
-        if @_ && (!$collection || !$collection->isa('MongoDB::Collection'))
+    die $die_msg if 
+         (@_ && !$collection) or 
+         (@_ && $collection)  and 
+             !$collection->isa('MongoDB::Collection') &&
+             !$collection->isa('Mango::Collection')
     ;
 
     $self->{collection} = $collection if $collection;
@@ -217,7 +221,7 @@ sub cursor {
 
     my $cri = $self->criteria;
     my $col = $self->collection;
-    my $cur = $col->query($cri->{where});
+    my $cur = $col->find($cri->{where});
 
     $cur->fields($cri->{select})          if values %{$cri->{select}};
     $cur->sort($cri->{order})             if values %{$cri->{order}};
@@ -458,6 +462,7 @@ sub where_not_exists {
 1;
 
 __END__
+
 =pod
 
 =head1 NAME
@@ -466,7 +471,7 @@ MongoDB::QueryBuilder - Query Builder for MongoDB
 
 =head1 VERSION
 
-version 0.0004
+version 0.0005
 
 =head1 SYNOPSIS
 
@@ -743,4 +748,3 @@ This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-

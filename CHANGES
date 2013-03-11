@@ -1,5 +1,9 @@
 Revision history for the Perl library MongoDB::QueryBuilder
 
+0.0005  2013-03-11
+
+  - Adjusted to be compatible with the Mango mongodb driver
+
 0.0004  2013-02-07
 
   - Fixed tests to check for the existence of MongoDB server
